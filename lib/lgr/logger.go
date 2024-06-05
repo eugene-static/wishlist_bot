@@ -1,6 +1,7 @@
 package lgr
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 )
@@ -25,16 +26,28 @@ type Log struct {
 	*slog.Logger
 }
 
-func New(w io.Writer, level int) *Log {
-	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
+func New(w io.Writer, env string) *Log {
+	if env == "debug" {
+		handler := slog.NewTextHandler(w, &slog.HandlerOptions{
+			AddSource:   false,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: nil,
+		})
+		return &Log{slog.New(handler)}
+	}
+	handler := slog.NewJSONHandler(w, &slog.HandlerOptions{
 		AddSource:   false,
-		Level:       slog.LevelDebug,
+		Level:       slog.LevelInfo,
 		ReplaceAttr: nil,
 	})
 	return &Log{slog.New(handler)}
 }
 
-func (l *Log) Errorf(code int, err error, attr ...any) {
+func (l *Log) Errorf(text string, err error, attr ...any) {
+	l.With(attr...).Error(text, slog.Any("error", err))
+}
+
+func match(code int) string {
 	var text string
 	switch code {
 	case ErrGetList:
@@ -66,7 +79,11 @@ func (l *Log) Errorf(code int, err error, attr ...any) {
 	default:
 		text = "Unknown error"
 	}
-	l.With(attr...).Error(text, slog.Any("error", err))
+	return text
+}
+
+func (l *Log) Sprint(code int, err error) error {
+	return fmt.Errorf(match(code), err)
 }
 
 func (l *Log) With(attr ...any) *Log {

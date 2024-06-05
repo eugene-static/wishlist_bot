@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eugene-static/wishlist_bot/internal/bot"
 	"github.com/eugene-static/wishlist_bot/internal/handler"
 	"github.com/eugene-static/wishlist_bot/internal/service"
 	"github.com/eugene-static/wishlist_bot/internal/session"
@@ -36,7 +37,7 @@ func New(cfg *config.Config) *Server {
 	}
 	return &Server{
 		cfg: cfg,
-		log: lgr.New(output, cfg.Logger.Level),
+		log: lgr.New(output, cfg.Logger.Env),
 	}
 }
 
@@ -45,45 +46,40 @@ func (s *Server) Start() {
 	defer stop()
 	appStorage, err := storage.New(ctx, &s.cfg.Storage)
 	if err != nil {
-		s.log.Errorf(lgr.ErrStorageInit, err)
+		s.log.Errorf("storage initialization error", err)
 		return
 	}
-	appHandler := handler.New(s.log, session.New(), service.New(appStorage))
-	bot, err := tgbotapi.NewBotAPI(s.cfg.Bot.Token)
+	botapi, err := tgbotapi.NewBotAPI(s.cfg.Bot.Token)
 	if err != nil {
-		s.log.Errorf(lgr.ErrCreateBot, err)
+		s.log.Errorf("bot creating error", err)
 		return
 	}
-	s.log.Info("authorized", slog.String("admin", bot.Self.UserName))
-	bot.Debug = s.cfg.Bot.DebugMode
-	u := tgbotapi.NewUpdate(s.cfg.Bot.UpdateOffset)
-	u.Timeout = s.cfg.Bot.UpdateTimeout
-	updates := bot.GetUpdatesChan(u)
-	go func() {
-		for update := range updates {
-			mc := appHandler.MessageConfig(ctx, &update)
-			if mc == nil {
-				continue
-			}
-			if _, err = bot.Send(mc); err != nil {
-				s.log.Errorf(lgr.ErrSendMessage, err)
-			}
-		}
-	}()
+	botapi.Debug = s.cfg.Bot.DebugMode
+	mux := bot.NewBotMux()
+	b := bot.NewBot(botapi)
+	appHandler := handler.New(s.log, service.New(appStorage), session.New(), b, mux)
+	appHandler.Register()
+	appHandler.Build()
+	s.log.Info("authorized", slog.String("admin", botapi.Self.UserName))
+	go bot.NewServer(b, mux).Listen(ctx, botapi.GetUpdatesChan(tgbotapi.UpdateConfig{
+		Offset:  s.cfg.Bot.UpdateOffset,
+		Limit:   s.cfg.Bot.UpdateLimit,
+		Timeout: s.cfg.Bot.UpdateTimeout,
+	}))
 	<-ctx.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	long := make(chan struct{}, 1)
 	go func() {
-		bot.StopReceivingUpdates()
+		botapi.StopReceivingUpdates()
 		if err = appStorage.Close(); err != nil {
-			s.log.Errorf(lgr.ErrStorageClose, err)
+			s.log.Errorf("closing storage error", err)
 		}
 		long <- struct{}{}
 	}()
 	select {
 	case <-ctx.Done():
-		s.log.Errorf(lgr.ErrShutdown, ctx.Err())
+		s.log.Errorf("error during shutdown", ctx.Err())
 	case <-long:
 		s.log.Info("The app is shut down successfully")
 	}

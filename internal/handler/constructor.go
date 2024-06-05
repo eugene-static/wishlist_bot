@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"fmt"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/eugene-static/wishlist_bot/internal/bot"
+	"github.com/eugene-static/wishlist_bot/lib/format"
 )
 
 const (
@@ -19,73 +18,108 @@ const (
 
 const admin = "@eugene_static"
 
-type messageConfig struct {
-	userID int64
-	text   string
-	level  int
-}
+const (
+	actionAdd       = "/add"
+	actionDelete    = "/delete"
+	actionPassword  = "/password"
+	actionShowUser  = "/show_user"
+	actionShowMe    = "/show_me"
+	actionBack      = "/back"
+	messageStart    = "/start"
+	messageAdd      = "/message_add"
+	messageDelete   = "/message_delete"
+	messageShowUser = "/message_show_user"
+	messagePassword = "/message_password"
+)
 
-func newConfig(userID int64) *messageConfig {
-	return &messageConfig{
-		userID: userID,
-		level:  lvlEmpty,
-	}
-}
+const DeletePassword = "Удалить пароль"
 
-func (mc *messageConfig) build() tgbotapi.MessageConfig {
-	msg := tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID:           mc.userID,
-			ReplyToMessageID: 0,
-		},
-		Text:                  mc.text,
-		ParseMode:             tgbotapi.ModeHTML,
-		DisableWebPagePreview: true,
-	}
-	markUp := tgbotapi.NewInlineKeyboardMarkup()
-	switch mc.level {
-	case lvlStart:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonMyWishlist, actionShowMe),
-				tgbotapi.NewInlineKeyboardButtonData(buttonFindUser, actionShowUser)))
-	case lvlMe:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonAdd, actionAdd),
-				tgbotapi.NewInlineKeyboardButtonData(buttonDelete, actionDelete),
-				tgbotapi.NewInlineKeyboardButtonData(buttonPassword, actionPassword),
-			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonBack, actionBack),
-			))
-	case lvlUser:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonBack, actionBack)))
-	case lvlService:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonOK, actionShowMe)))
-	case lvlEdit:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonCancel, actionShowMe)))
-	case lvlServiceExt:
-		markUp = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(buttonCancel, actionBack),
-				tgbotapi.NewInlineKeyboardButtonData(buttonOK /*TODO*/, "nil")))
-	default:
-		return msg
-	}
-	msg.ReplyMarkup = markUp
-	return msg
-}
+const (
+	lvlEmpty = iota
+	lvlStart
+	lvlEmptyList
+	lvlMe
+	lvlUser
+	lvlEdit
+	lvlService
+	lvlServiceExt
+)
 
-func (mc *messageConfig) error(code int) tgbotapi.MessageConfig {
-	mc.text = fmt.Sprintf("В работе бота возникла ошибка. Код %03o\nПопробуйте снова позже или же обратитесь к %s за помощью",
-		code, admin)
-	msg := tgbotapi.NewMessage(mc.userID, mc.text)
-	return msg
+const (
+	textGreetings = 100 + iota
+	textAddWish
+	textDeleteWish
+	textEnterPassword
+	textWrongPassword
+	textNoSpace
+	textEnterUsername
+	textSuccess
+	textWishList
+	textNoWishes
+	textUserNotFound
+	textWrongRequest
+	textDefaultMessage
+	textError
+)
+
+func (h *Handle) Build() {
+	msg := bot.NewConfig(bot.ModeHTML)
+	h.bot.Config.Set(lvlEmpty, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonMyWishlist, actionShowMe),
+			bot.NewButton(buttonFindUser, actionShowUser)))
+	h.bot.Config.Set(lvlStart, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonAdd, actionAdd),
+			bot.NewButton(buttonDelete, actionDelete),
+			bot.NewButton(buttonPassword, actionPassword),
+		),
+		bot.NewRow(
+			bot.NewButton(buttonBack, actionBack),
+		))
+	h.bot.Config.Set(lvlMe, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonAdd, actionAdd),
+			bot.NewButton(buttonPassword, actionPassword),
+		),
+		bot.NewRow(
+			bot.NewButton(buttonBack, actionBack),
+		))
+	h.bot.Config.Set(lvlEmptyList, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonBack, actionBack)))
+	h.bot.Config.Set(lvlUser, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonOK, actionShowMe)))
+	h.bot.Config.Set(lvlService, msg)
+	msg.ReplyMarkup = bot.NewMarkup(
+		bot.NewRow(
+			bot.NewButton(buttonCancel, actionShowMe)))
+	h.bot.Config.Set(lvlEdit, msg)
+	//
+	h.bot.Config.SetReplyMessage(textGreetings, "Итак, чем займемся?")
+	h.bot.Config.SetReplyMessage(textAddWish, "Введи описание и/или ссылку и отправь в чат одним сообщением:")
+	h.bot.Config.SetReplyMessage(textDeleteWish, "Введи через пробелы номера желаний из списка, которые нужно удалить. Например:\n"+
+		format.Format("1 3 10 6", format.Monotype))
+	h.bot.Config.SetReplyMessage(textEnterPassword, "Пароль необходим для того, чтобы к твоему вишлисту был доступ только у тех, кто знает пароль. "+
+		"Им ты можешь делиться лично с кем-то или же опубликовать в своем профиле. "+
+		"Пароль может быть в любой форме, но не должен содержать пробелы. Например:"+
+		"🐈‍⬛💥💽\n"+
+		"Чтобы сбросить пароль и сделать вишлист общедоступным, введи:\n"+
+		format.Format(DeletePassword, format.Monotype))
+	h.bot.Config.SetReplyMessage(textWrongPassword, "Неверный пароль. Поищи пароль в профиле пользователя либо же обратись к нему лично")
+	h.bot.Config.SetReplyMessage(textEnterUsername, "Введи юзернейм пользователя, чей вишлист ты хочешь посмотреть. Юзернейм можно найти в профиле пользователя.\n"+
+		"Если вишлист выбранного пользователя защищён паролем, то через пробел введи пароль. Например:\n"+
+		format.Format(admin+" пароль", format.Monotype))
+	h.bot.Config.SetReplyMessage(textSuccess, "Успешно")
+	h.bot.Config.SetReplyMessage(textNoWishes, "Здесь нет ни одного желания...")
+	h.bot.Config.SetReplyMessage(textUserNotFound, "Похоже, у этого пользователя нет вишлиста")
+	h.bot.Config.SetReplyMessage(textWrongRequest, "В запросе ошибка, попробуй снова")
+	h.bot.Config.SetReplyMessage(textNoSpace, "В пароле не должно содержаться пробелов. Попробуй другой")
+	h.bot.Config.SetReplyMessage(textDefaultMessage, "Не могу обработать сообщение")
 }

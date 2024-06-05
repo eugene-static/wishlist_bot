@@ -17,7 +17,7 @@ type Storage struct {
 }
 
 type Logger struct {
-	Level        int    `json:"level"`
+	Env          string `json:"env"`
 	Internal     bool   `json:"internal"`
 	ExternalPath string `json:"external_path"`
 }
@@ -27,6 +27,7 @@ type Bot struct {
 	DebugMode     bool   `json:"debug_mode"`
 	UpdateOffset  int    `json:"update_offset"`
 	UpdateTimeout int    `json:"update_timeout"`
+	UpdateLimit   int    `json:"update_limit"`
 }
 
 func Get(path string) (*Config, error) {
