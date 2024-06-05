@@ -50,21 +50,6 @@ func New(log *lgr.Log, service Service, mgr *session.Manager, b *bot.Bot, mux *b
 	}
 }
 
-func (h *Handle) Register() {
-	h.mux.Handle(bot.DefaultMessage, h.message)
-	h.mux.Handle(messageAdd, h.add(h.show(true)))
-	h.mux.Handle(messageDelete, h.delete(h.show(true)))
-	h.mux.Handle(messageShowUser, h.show(false))
-	h.mux.Handle(messagePassword, h.password)
-	h.mux.Handle(messageStart, h.start)
-	h.mux.Handle(actionShowMe, h.show(true))
-	h.mux.Handle(actionBack, h.callback(textGreetings, lvlStart, messageStart))
-	h.mux.Handle(actionAdd, h.callback(textAddWish, lvlEdit, messageAdd))
-	h.mux.Handle(actionDelete, h.callback(textDeleteWish, lvlEdit, messageDelete))
-	h.mux.Handle(actionPassword, h.callback(textEnterPassword, lvlEdit, messagePassword))
-	h.mux.Handle(actionShowUser, h.callback(textEnterUsername, lvlUser, messageShowUser))
-}
-
 func (h *Handle) send(user *session.User, configKey int, messageKey int) {
 	_, err := h.bot.Send(user.ID, configKey, messageKey)
 	if err != nil {
@@ -74,7 +59,7 @@ func (h *Handle) send(user *session.User, configKey int, messageKey int) {
 }
 
 func (h *Handle) errorCode(code int, user *session.User, err error) {
-	err = h.log.Sprint(code, err)
+	err = h.log.ErrorCode(code, err)
 	log := h.log.With(
 		slog.Any("error", err),
 		slog.Int64("user_id", user.ID),

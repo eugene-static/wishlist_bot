@@ -6,86 +6,55 @@ import (
 	"log/slog"
 )
 
-const (
-	ErrGetUser = iota
-	ErrAddUser
-	ErrGetList
-	ErrAddWish
-	ErrDelWish
-	ErrChangePass
-	ErrUpdateUsername
-	ErrSendMessage
-	ErrStorageInit
-	ErrStorageClose
-	ErrCreateBot
-	ErrGetMessageConfig
-	ErrShutdown
-)
-
 type Log struct {
 	*slog.Logger
+	errors map[int]string
 }
 
 func New(w io.Writer, env string) *Log {
+	var handler slog.Handler
 	if env == "debug" {
-		handler := slog.NewTextHandler(w, &slog.HandlerOptions{
+		handler = slog.NewTextHandler(w, &slog.HandlerOptions{
 			AddSource:   false,
 			Level:       slog.LevelDebug,
 			ReplaceAttr: nil,
 		})
-		return &Log{slog.New(handler)}
+
+	} else {
+		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{
+			AddSource:   false,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: nil,
+		})
 	}
-	handler := slog.NewJSONHandler(w, &slog.HandlerOptions{
-		AddSource:   false,
-		Level:       slog.LevelInfo,
-		ReplaceAttr: nil,
-	})
-	return &Log{slog.New(handler)}
+	return &Log{
+		Logger: slog.New(handler),
+		errors: make(map[int]string),
+	}
 }
 
 func (l *Log) Errorf(text string, err error, attr ...any) {
 	l.With(attr...).Error(text, slog.Any("error", err))
 }
 
-func match(code int) string {
-	var text string
-	switch code {
-	case ErrGetList:
-		text = "Get list error"
-	case ErrAddWish:
-		text = "Add wish error"
-	case ErrDelWish:
-		text = "Delete wish error"
-	case ErrChangePass:
-		text = "Change password error"
-	case ErrUpdateUsername:
-		text = "Update username error"
-	case ErrAddUser:
-		text = "Add user error"
-	case ErrGetUser:
-		text = "GetUser error"
-	case ErrSendMessage:
-		text = "Send message error"
-	case ErrStorageInit:
-		text = "Storage init error"
-	case ErrStorageClose:
-		text = "Storage close error"
-	case ErrCreateBot:
-		text = "Creating bot error"
-	case ErrGetMessageConfig:
-		text = "Get message config error"
-	case ErrShutdown:
-		text = "Shutdown error"
-	default:
-		text = "Unknown error"
-	}
-	return text
+func (l *Log) Set(key int, text string) {
+	l.errors[key] = text
 }
 
-func (l *Log) Sprint(code int, err error) error {
-	return fmt.Errorf(match(code), err)
+func (l *Log) get(key int) string {
+	if err, ok := l.errors[key]; ok {
+		return err
+	}
+	return "Unknown error"
+}
+
+func (l *Log) ErrorCode(code int, err error) error {
+	return fmt.Errorf(l.get(code), err)
 }
 
 func (l *Log) With(attr ...any) *Log {
-	return &Log{l.Logger.With(attr...)}
+	return &Log{
+		Logger: l.Logger.With(attr...),
+		errors: l.errors,
+	}
 }

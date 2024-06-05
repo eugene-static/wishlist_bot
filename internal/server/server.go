@@ -59,8 +59,9 @@ func (s *Server) Start() {
 	b := bot.NewBot(botapi)
 	appHandler := handler.New(s.log, service.New(appStorage), session.New(), b, mux)
 	appHandler.Register()
-	appHandler.Build()
-	s.log.Info("authorized", slog.String("admin", botapi.Self.UserName))
+	appHandler.SetConfig()
+	appHandler.SetErrors()
+	s.log.Info("authorized", slog.String("admin", botapi.Self.String()))
 	go bot.NewServer(b, mux).Listen(ctx, botapi.GetUpdatesChan(tgbotapi.UpdateConfig{
 		Offset:  s.cfg.Bot.UpdateOffset,
 		Limit:   s.cfg.Bot.UpdateLimit,

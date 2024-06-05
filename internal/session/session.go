@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const t = 10 * time.Minute
+
 type Manager struct {
 	Users map[int64]*User
 	mu    sync.Mutex
@@ -27,7 +29,7 @@ func New() *Manager {
 }
 
 func (m *Manager) timer(id int64) *time.Timer {
-	return time.AfterFunc(time.Hour, func() {
+	return time.AfterFunc(t, func() {
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		delete(m.Users, id)
@@ -53,6 +55,7 @@ func (m *Manager) GetUser(id int64) *User {
 	if !ok {
 		return nil
 	}
+	user.updateTimer()
 	return user
 }
 
@@ -60,5 +63,5 @@ func (u *User) updateTimer() {
 	if !u.timer.Stop() {
 		<-u.timer.C
 	}
-	u.timer.Reset(time.Hour)
+	u.timer.Reset(t)
 }

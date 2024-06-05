@@ -32,7 +32,10 @@ const (
 	messagePassword = "/message_password"
 )
 
-const DeletePassword = "Удалить пароль"
+const (
+	deleteAllWishes = "Удалить всё"
+	deletePassword  = "Удалить пароль"
+)
 
 const (
 	lvlEmpty = iota
@@ -62,7 +65,30 @@ const (
 	textError
 )
 
-func (h *Handle) Build() {
+const (
+	errGetUser = iota
+	errGetList
+	errAddWish
+	errDelWish
+	errChangePass
+)
+
+func (h *Handle) Register() {
+	h.mux.Handle(bot.DefaultMessage, h.message)
+	h.mux.Handle(messageAdd, h.add(h.show(true)))
+	h.mux.Handle(messageDelete, h.delete(h.show(true)))
+	h.mux.Handle(messageShowUser, h.show(false))
+	h.mux.Handle(messagePassword, h.password)
+	h.mux.Handle(messageStart, h.start)
+	h.mux.Handle(actionShowMe, h.show(true))
+	h.mux.Handle(actionBack, h.callback(textGreetings, lvlStart, messageStart))
+	h.mux.Handle(actionAdd, h.callback(textAddWish, lvlEdit, messageAdd))
+	h.mux.Handle(actionDelete, h.callback(textDeleteWish, lvlEdit, messageDelete))
+	h.mux.Handle(actionPassword, h.callback(textEnterPassword, lvlEdit, messagePassword))
+	h.mux.Handle(actionShowUser, h.callback(textEnterUsername, lvlUser, messageShowUser))
+}
+
+func (h *Handle) SetConfig() {
 	msg := bot.NewConfig(bot.ModeHTML)
 	h.bot.Config.Set(lvlEmpty, msg)
 	msg.ReplyMarkup = bot.NewMarkup(
@@ -105,13 +131,14 @@ func (h *Handle) Build() {
 	h.bot.Config.SetReplyMessage(textGreetings, "Итак, чем займемся?")
 	h.bot.Config.SetReplyMessage(textAddWish, "Введи описание и/или ссылку и отправь в чат одним сообщением:")
 	h.bot.Config.SetReplyMessage(textDeleteWish, "Введи через пробелы номера желаний из списка, которые нужно удалить. Например:\n"+
-		format.Format("1 3 10 6", format.Monotype))
+		format.Format("1 3 10 6\n", format.Monotype)+
+		"Если хочешь удалить весь список, введи "+format.Format(deleteAllWishes, format.Monotype))
 	h.bot.Config.SetReplyMessage(textEnterPassword, "Пароль необходим для того, чтобы к твоему вишлисту был доступ только у тех, кто знает пароль. "+
 		"Им ты можешь делиться лично с кем-то или же опубликовать в своем профиле. "+
 		"Пароль может быть в любой форме, но не должен содержать пробелы. Например:"+
 		"🐈‍⬛💥💽\n"+
 		"Чтобы сбросить пароль и сделать вишлист общедоступным, введи:\n"+
-		format.Format(DeletePassword, format.Monotype))
+		format.Format(deletePassword, format.Monotype))
 	h.bot.Config.SetReplyMessage(textWrongPassword, "Неверный пароль. Поищи пароль в профиле пользователя либо же обратись к нему лично")
 	h.bot.Config.SetReplyMessage(textEnterUsername, "Введи юзернейм пользователя, чей вишлист ты хочешь посмотреть. Юзернейм можно найти в профиле пользователя.\n"+
 		"Если вишлист выбранного пользователя защищён паролем, то через пробел введи пароль. Например:\n"+
@@ -122,4 +149,12 @@ func (h *Handle) Build() {
 	h.bot.Config.SetReplyMessage(textWrongRequest, "В запросе ошибка, попробуй снова")
 	h.bot.Config.SetReplyMessage(textNoSpace, "В пароле не должно содержаться пробелов. Попробуй другой")
 	h.bot.Config.SetReplyMessage(textDefaultMessage, "Не могу обработать сообщение")
+}
+
+func (h *Handle) SetErrors() {
+	h.log.Set(errGetUser, "getting user error")
+	h.log.Set(errGetList, "getting list error")
+	h.log.Set(errAddWish, "adding wish error")
+	h.log.Set(errDelWish, "deleting wish error")
+	h.log.Set(errChangePass, "changing password error")
 }
