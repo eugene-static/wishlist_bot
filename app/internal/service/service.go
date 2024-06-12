@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/eugene-static/wishlist_bot/internal/entity"
+	"github.com/eugene-static/wishlist_bot/app/internal/entity"
 )
 
 type User interface {

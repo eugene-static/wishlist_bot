@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/eugene-static/wishlist_bot/internal/bot"
-	"github.com/eugene-static/wishlist_bot/lib/format"
+	"github.com/eugene-static/wishlist_bot/app/internal/bot"
+	"github.com/eugene-static/wishlist_bot/app/lib/format"
 )
 
 const (
@@ -75,12 +75,12 @@ const (
 
 func (h *Handle) Register() {
 	h.mux.Handle(bot.DefaultMessage, h.message)
-	h.mux.Handle(messageAdd, h.add(h.show(true)))
-	h.mux.Handle(messageDelete, h.delete(h.show(true)))
-	h.mux.Handle(messageShowUser, h.show(false))
+	h.mux.Handle(messageAdd, h.add(h.showMe))
+	h.mux.Handle(messageDelete, h.delete(h.showMe))
+	h.mux.Handle(messageShowUser, h.showUser)
 	h.mux.Handle(messagePassword, h.password)
 	h.mux.Handle(messageStart, h.start)
-	h.mux.Handle(actionShowMe, h.show(true))
+	h.mux.Handle(actionShowMe, h.showMe)
 	h.mux.Handle(actionBack, h.callback(textGreetings, lvlStart, messageStart))
 	h.mux.Handle(actionAdd, h.callback(textAddWish, lvlEdit, messageAdd))
 	h.mux.Handle(actionDelete, h.callback(textDeleteWish, lvlEdit, messageDelete))

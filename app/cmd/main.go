@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/eugene-static/wishlist_bot/internal/server"
-	"github.com/eugene-static/wishlist_bot/lib/config"
+	"github.com/eugene-static/wishlist_bot/app/internal/server"
+	"github.com/eugene-static/wishlist_bot/app/lib/config"
 )
 
 func main() {

@@ -8,8 +8,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/eugene-static/wishlist_bot/internal/entity"
-	"github.com/eugene-static/wishlist_bot/lib/config"
+	"github.com/eugene-static/wishlist_bot/app/internal/entity"
+	"github.com/eugene-static/wishlist_bot/app/lib/config"
 	"github.com/mattn/go-sqlite3"
 )
 

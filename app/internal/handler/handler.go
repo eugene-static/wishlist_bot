@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/eugene-static/wishlist_bot/internal/bot"
-	"github.com/eugene-static/wishlist_bot/internal/entity"
-	"github.com/eugene-static/wishlist_bot/internal/session"
-	"github.com/eugene-static/wishlist_bot/lib/lgr"
+	"github.com/eugene-static/wishlist_bot/app/internal/bot"
+	"github.com/eugene-static/wishlist_bot/app/internal/entity"
+	"github.com/eugene-static/wishlist_bot/app/internal/session"
+	"github.com/eugene-static/wishlist_bot/app/lib/lgr"
 	"golang.org/x/crypto/bcrypt"
 )
 

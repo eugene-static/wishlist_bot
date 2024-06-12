@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eugene-static/wishlist_bot/internal/bot"
-	"github.com/eugene-static/wishlist_bot/internal/entity"
-	"github.com/eugene-static/wishlist_bot/lib/random"
+	"github.com/eugene-static/wishlist_bot/app/internal/bot"
+	"github.com/eugene-static/wishlist_bot/app/internal/entity"
+	"github.com/eugene-static/wishlist_bot/app/lib/random"
 )
 
 func (h *Handle) start(ctx context.Context, r *bot.Request) {

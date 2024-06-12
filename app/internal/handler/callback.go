@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/eugene-static/wishlist_bot/internal/bot"
+	"github.com/eugene-static/wishlist_bot/app/internal/bot"
 )
 
 func (h *Handle) callback(code int, level int, action string) bot.HandlerFunc {
