@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/eugene-static/wishlist_bot/internal/bot"
-	"github.com/eugene-static/wishlist_bot/internal/handler"
-	"github.com/eugene-static/wishlist_bot/internal/service"
-	"github.com/eugene-static/wishlist_bot/internal/session"
-	"github.com/eugene-static/wishlist_bot/internal/storage"
-	"github.com/eugene-static/wishlist_bot/lib/config"
-	"github.com/eugene-static/wishlist_bot/lib/lgr"
+	"github.com/eugene-static/wishlist_bot/app/internal/bot"
+	"github.com/eugene-static/wishlist_bot/app/internal/handler"
+	"github.com/eugene-static/wishlist_bot/app/internal/service"
+	"github.com/eugene-static/wishlist_bot/app/internal/session"
+	"github.com/eugene-static/wishlist_bot/app/internal/storage"
+	"github.com/eugene-static/wishlist_bot/app/lib/config"
+	"github.com/eugene-static/wishlist_bot/app/lib/lgr"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.Get("./internal/config/config.json")
+	cfg, err := config.Get("app/internal/config/config.json")
 	if err != nil {
 		panic(err)
 	}
